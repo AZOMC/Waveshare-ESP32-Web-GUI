@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MQTT Config</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    .mqtt-mode-group { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+    .mqtt-mode-btn {
+      flex:1; min-width:120px; padding:10px 0; border:2px solid #ddd; border-radius:8px;
+      background:#f9f9f9; color:#555; font-size:14px; font-weight:700; cursor:pointer;
+      transition:all 0.2s; text-align:center;
+    }
+    .mqtt-mode-btn.active { border-color:#2563eb; background:#eff6ff; color:#1d4ed8; }
+    .mqtt-conn-block {
+      background:#f9f9f9; border:1px solid #e8e8e8; border-radius:8px;
+      padding:16px 18px; margin-bottom:16px; text-align:left;
+    }
+    .mqtt-conn-block h4 {
+      margin:0 0 12px 0; font-size:12px; text-transform:uppercase;
+      letter-spacing:0.7px; color:#888; font-weight:700;
+      border-bottom:1px solid #eee; padding-bottom:8px;
+    }
+    .mqtt-field-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; font-size:13px; flex-wrap:wrap; }
+    .mqtt-field-row label { min-width:90px; color:#555; font-weight:600; flex-shrink:0; }
+    .mqtt-field-row input, .mqtt-field-row select {
+      flex:1; min-width:140px; padding:7px 10px; border:1px solid #ccc;
+      border-radius:6px; font-size:13px; font-family:'Courier New',monospace;
+    }
+    .mqtt-field-row input:focus, .mqtt-field-row select:focus { outline:none; border-color:#2563eb; }
+    .mqtt-hint { font-size:11px; color:#bbb; margin:4px 0 12px 0; }
+    .mqtt-proto-note {
+      font-size:11px; color:#2563eb; background:#eff6ff;
+      border-radius:5px; padding:4px 8px; margin-top:4px;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="topnav">
+  <img src="/shrdc_logo.png" alt="SHRDC">
+  <div class="topnav-links">
+    <a href="/"           class="nav-link">Dashboard</a>
+    <a href="/monitoring" class="nav-link">Monitoring</a>
+    <a href="/mqtt"       class="nav-link active">MQTT Config</a>
+    <a href="/rs485"      class="nav-link">RS485 Config</a>
+    <a href="/sdcard"     class="nav-link">SD Card</a>
+    <a href="/telegram"   class="nav-link">Telegram</a>
+  </div>
+  <img src="/msf_logo.png" alt="MSF">
+  <div class="topnav-right">
+    <a href="/logout" class="btn-logout">Logout</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>MQTT Configuration</h1>
+
+  <!-- Status banner — updated by pollStatus(), never by form load -->
+  <div class="mqtt-broker-section" style="margin-bottom:20px;">
+    <div class="mqtt-status-row">
+      <span class="mqtt-status-label">Active Broker:</span>
+      <span class="mqtt-status-ip" id="activeHost">--</span>
+      <span id="activeSummary" style="font-weight:normal;color:#888;font-size:12px;font-family:monospace;"></span>
+      <span class="mqtt-conn-badge" id="mqttConnBadge">&#9679; Checking&hellip;</span>
+    </div>
+  </div>
+
+  <form id="mqttForm">
+    <div class="mqtt-broker-section">
+      <h3>Broker</h3>
+
+      <div style="margin-bottom:12px;">
+        <div style="font-size:13px;color:#555;font-weight:600;margin-bottom:8px;">Connection Mode</div>
+        <div class="mqtt-mode-group">
+          <button type="button" class="mqtt-mode-btn" id="btnLocal" onclick="setMode('local')">
+            🏠 Local Broker<br><small style="font-weight:normal;font-size:11px;">Direct TCP / TLS</small>
+          </button>
+          <button type="button" class="mqtt-mode-btn" id="btnCloud" onclick="setMode('cloud')">
+            ☁️ Cloud Broker<br><small style="font-weight:normal;font-size:11px;">WebSocket / WSS</small>
+          </button>
+        </div>
+      </div>
+
+      <!-- Local settings -->
+      <div id="localBlock" class="mqtt-conn-block" style="display:none;">
+        <h4>Local Broker Settings</h4>
+        <div class="mqtt-field-row">
+          <label>Protocol</label>
+          <select id="localProto" onchange="updateProtoNote()">
+            <option value="tcp">TCP (plain, port 1883)</option>
+            <option value="ssl">TLS / SSL (port 8883)</option>
+          </select>
+        </div>
+        <div class="mqtt-field-row">
+          <label>Broker IP</label>
+          <input type="text" id="localHost" placeholder="e.g. 192.168.1.100" spellcheck="false" autocomplete="off">
+        </div>
+        <div class="mqtt-field-row">
+          <label>Port</label>
+          <input type="number" id="localPort" placeholder="1883" min="1" max="65535" style="max-width:100px;">
+        </div>
+        <div class="mqtt-proto-note" id="localProtoNote">Plain TCP — no encryption. Typical Mosquitto default.</div>
+      </div>
+
+      <!-- Cloud settings -->
+      <div id="cloudBlock" class="mqtt-conn-block" style="display:none;">
+        <h4>Cloud Broker Settings</h4>
+        <div class="mqtt-field-row">
+          <label>Protocol</label>
+          <select id="cloudProto" onchange="updateProtoNote()">
+            <option value="wss">WSS (WebSocket over TLS, recommended)</option>
+            <option value="ws">WS (WebSocket plain)</option>
+          </select>
+        </div>
+        <div class="mqtt-field-row">
+          <label>Host / URL</label>
+          <input type="text" id="cloudHost" placeholder="e.g. broker.hivemq.com" spellcheck="false" autocomplete="off">
+        </div>
+        <div class="mqtt-field-row">
+          <label>Port</label>
+          <input type="number" id="cloudPort" placeholder="443" min="1" max="65535" style="max-width:100px;">
+        </div>
+        <div class="mqtt-field-row">
+          <label>WS Path</label>
+          <input type="text" id="cloudPath" placeholder="/mqtt" spellcheck="false">
+        </div>
+        <div class="mqtt-proto-note" id="cloudProtoNote">WSS — encrypted WebSocket. Use for cloud brokers.</div>
+      </div>
+
+      <p class="mqtt-hint">Changes take effect immediately on Save. ESP32 will reconnect to the new broker.</p>
+    </div>
+
+    <!-- Topics -->
+    <div class="io-wrapper">
+      <div class="io-box">
+        <h2>Digital Input Topics</h2>
+        <div id="diInputs"></div>
+      </div>
+      <div class="io-box">
+        <h2>Digital Output Topics</h2>
+        <div id="doInputs"></div>
+      </div>
+    </div>
+    <br>
+    <button type="submit" style="padding:8px 24px;font-size:14px;">&#128190; Save</button>
+  </form>
+
+  <div class="site-footer">&copy; SHRDC. All rights reserved.</div>
+</div>
+
+<script>
+let currentMode = 'cloud';
+// formLoaded guard: populate form fields ONCE on page load, never again
+let formLoaded = false;
+
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('localBlock').style.display = (mode === 'local') ? '' : 'none';
+  document.getElementById('cloudBlock').style.display = (mode === 'cloud') ? '' : 'none';
+  document.getElementById('btnLocal').classList.toggle('active', mode === 'local');
+  document.getElementById('btnCloud').classList.toggle('active', mode === 'cloud');
+  updateProtoNote();
+}
+
+function updateProtoNote() {
+  const lp = document.getElementById('localProto').value;
+  const cp = document.getElementById('cloudProto').value;
+  document.getElementById('localProtoNote').textContent =
+    lp === 'ssl'
+      ? 'TLS/SSL — encrypted. Broker must have TLS enabled on this port.'
+      : 'Plain TCP — no encryption. Typical Mosquitto default.';
+  document.getElementById('cloudProtoNote').textContent =
+    cp === 'wss'
+      ? 'WSS — encrypted WebSocket. For cloud brokers (HiveMQ, Replit, etc.)'
+      : 'WS — plain WebSocket. Only use on secure local networks.';
+  // Auto-suggest port only if user hasn't typed one themselves
+  if (currentMode === 'local') {
+    const el = document.getElementById('localPort');
+    if (!el.dataset.userEdited) el.value = lp === 'ssl' ? '8883' : '1883';
+  } else {
+    const el = document.getElementById('cloudPort');
+    if (!el.dataset.userEdited) el.value = cp === 'wss' ? '443' : '80';
+  }
+}
+
+['localPort', 'cloudPort'].forEach(id =>
+  document.getElementById(id).addEventListener('input', function () { this.dataset.userEdited = '1'; })
+);
+
+// ── updateStatusBadge: only touches the status strip, never form fields ──────
+function updateStatusBadge(d) {
+  const badge = document.getElementById('mqttConnBadge');
+  badge.textContent = d.mqttConnected ? '\u25cf Connected' : '\u25cf Disconnected';
+  badge.className   = 'mqtt-conn-badge ' + (d.mqttConnected ? 'connected' : 'disconnected');
+  document.getElementById('activeHost').textContent    = d.mqttHost || '--';
+  document.getElementById('activeSummary').textContent = d.mqttMode
+    ? '(' + d.mqttMode + ' / ' + (d.mqttProto || '').toUpperCase() + ' :' + d.mqttPort + ')'
+    : '';
+}
+
+// ── loadConfig: runs ONCE on page load — populates form fields + status ───────
+async function loadConfig() {
+  try {
+    const d = await (await fetch('/getConfig')).json();
+
+    if (!formLoaded) {
+      formLoaded = true;
+      const mode = d.mqttMode || 'cloud';
+      setMode(mode);
+
+      if (mode === 'local') {
+        document.getElementById('localProto').value = d.mqttProto || 'tcp';
+        document.getElementById('localHost').value  = d.mqttHost  || '';
+        document.getElementById('localPort').value  = d.mqttPort  || 1883;
+      } else {
+        document.getElementById('cloudProto').value = d.mqttProto || 'wss';
+        document.getElementById('cloudHost').value  = d.mqttHost  || '';
+        document.getElementById('cloudPort').value  = d.mqttPort  || 443;
+        document.getElementById('cloudPath').value  = d.mqttPath  || '/mqtt';
+      }
+      updateProtoNote();
+
+      // Build topic rows
+      const diC = document.getElementById('diInputs');
+      const doC = document.getElementById('doInputs');
+      diC.innerHTML = ''; doC.innerHTML = '';
+      for (let i = 0; i < 8; i++) {
+        diC.innerHTML += '<div class="mqtt-row"><label>DI' + (i+1) + '</label>' +
+          '<input name="in'  + i + '" value="' + (d.inputs[i]  || '') + '"></div>';
+        doC.innerHTML += '<div class="mqtt-row"><label>DO' + (i+1) + '</label>' +
+          '<input name="out' + i + '" value="' + (d.outputs[i] || '') + '"></div>';
+      }
+    }
+
+    updateStatusBadge(d);
+  } catch (e) { console.error(e); }
+}
+
+// ── pollStatus: runs every 5 s — ONLY updates the connection badge ────────────
+async function pollStatus() {
+  try {
+    const d = await (await fetch('/getConfig')).json();
+    updateStatusBadge(d);
+  } catch (e) { /* silent — badge stays as-is */ }
+}
+
+// ── Form submit ───────────────────────────────────────────────────────────────
+document.getElementById('mqttForm').onsubmit = async function (e) {
+  e.preventDefault();
+  const fd = new FormData(this);
+
+  fd.set('mqttMode', currentMode);
+  if (currentMode === 'local') {
+    fd.set('mqttProto', document.getElementById('localProto').value);
+    fd.set('mqttHost',  document.getElementById('localHost').value);
+    fd.set('mqttPort',  document.getElementById('localPort').value);
+    fd.set('mqttPath',  '');
+  } else {
+    fd.set('mqttProto', document.getElementById('cloudProto').value);
+    fd.set('mqttHost',  document.getElementById('cloudHost').value);
+    fd.set('mqttPort',  document.getElementById('cloudPort').value);
+    fd.set('mqttPath',  document.getElementById('cloudPath').value);
+  }
+
+  const r = await fetch('/save', { method: 'POST', body: fd });
+  if (r.ok) {
+    alert('Saved! ESP32 will reconnect if broker settings changed.');
+    setTimeout(pollStatus, 1500);  // refresh status badge after reconnect
+  } else {
+    alert('Save failed.');
+  }
+};
+
+// Initial load (form + status), then status-only every 5 s
+loadConfig();
+setInterval(pollStatus, 5000);
+</script>
+</body>
+</html>

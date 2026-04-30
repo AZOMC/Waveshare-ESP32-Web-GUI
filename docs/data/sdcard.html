@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SD Card</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<!-- ── Fixed Top Navigation Bar ── -->
+<nav class="topnav">
+  <img src="/shrdc_logo.png" alt="SHRDC">
+  <div class="topnav-links">
+    <a href="/"           class="nav-link">Dashboard</a>
+    <a href="/monitoring" class="nav-link">Monitoring</a>
+    <a href="/mqtt"       class="nav-link">MQTT Config</a>
+    <a href="/rs485"      class="nav-link">RS485 Config</a>
+    <a href="/sdcard"     class="nav-link active">SD Card</a>
+    <a href="/telegram"   class="nav-link">Telegram</a>
+  </div>
+  <img src="/msf_logo.png" alt="MSF">
+  <div class="topnav-right">
+    <a href="/logout" class="btn-logout">Logout</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>SD Card Manager</h1>
+
+  <!-- ── SD Card Status ── -->
+  <div class="section-title">SD Card Status</div>
+  <div id="sdStatusArea">
+    <div class="sd-status-grid">
+      <div class="sd-info-card">
+        <span class="mc-label">Status</span>
+        <span class="mc-value" id="sdStatusBadge">Checking…</span>
+      </div>
+      <div class="sd-info-card">
+        <span class="mc-label">Card Type</span>
+        <span class="mc-value" id="sdCardType">--</span>
+      </div>
+      <div class="sd-info-card">
+        <span class="mc-label">Total</span>
+        <span class="mc-value" id="sdTotal">--</span>
+      </div>
+      <div class="sd-info-card">
+        <span class="mc-label">Used</span>
+        <span class="mc-value" id="sdUsed">--</span>
+      </div>
+      <div class="sd-info-card">
+        <span class="mc-label">Free</span>
+        <span class="mc-value green" id="sdFree">--</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Logging Settings ── -->
+  <div class="section-title" style="margin-top:28px;">Data Logging to SD</div>
+  <div class="sd-log-settings">
+    <div class="sd-log-row">
+      <label>Auto Logging</label>
+      <label class="sd-toggle">
+        <input type="checkbox" id="logEnabled" onchange="saveLogConfig()">
+        <span class="sd-slider"></span>
+      </label>
+      <span id="logEnabledLabel" style="font-size:13px;color:#555;margin-left:6px;">--</span>
+    </div>
+    <div class="sd-log-row">
+      <label>Interval (seconds)</label>
+      <input type="number" id="logInterval" min="5" max="3600" value="60"
+             style="width:80px;padding:6px 10px;border:1px solid #ccc;border-radius:6px;font-size:14px;">
+      <button class="btn-save-formula" onclick="saveLogConfig()" style="margin-left:8px;">Save</button>
+    </div>
+    <div class="sd-log-row">
+      <label>Rotation Period (seconds)</label>
+      <input type="number" id="logRotateInterval" min="60" max="86400" value="3600"
+             style="width:90px;padding:6px 10px;border:1px solid #ccc;border-radius:6px;font-size:14px;">
+      <button class="btn-save-formula" onclick="saveLogConfig()" style="margin-left:8px;">Save</button>
+      <span style="font-size:12px;color:#888;margin-left:8px;">3600 = 1 hour</span>
+    </div>
+    <div class="sd-log-row">
+      <label>Current Log File</label>
+      <code id="currentLogFile" style="font-size:12px;color:#1d4ed8;background:#eff6ff;padding:3px 10px;border-radius:4px;border:1px solid #bfdbfe;">--</code>
+    </div>
+    <div class="sd-log-row">
+      <label>Manual Snapshot</label>
+      <button class="btn-calc" onclick="takeSnapshot()">&#128190; Write Now</button>
+      <span id="snapshotMsg" style="font-size:12px;color:#16a34a;margin-left:8px;"></span>
+    </div>
+    <div class="sd-log-row">
+      <label>Log Format (CSV)</label>
+      <code style="font-size:11px;color:#555;background:#f0f0f0;padding:3px 8px;border-radius:4px;">
+        System Metrics and Digital Inputs Trigger Count
+      </code>
+    </div>
+  </div>
+
+  <!-- ── File Browser ── -->
+  <div class="section-title" style="margin-top:28px;">
+    Files on SD Card
+    <button class="btn-reset-all" onclick="loadFiles()" style="margin-left:8px;">&#8635; Refresh</button>
+    <button class="btn-reset-all" onclick="clearAllLogs()"
+            style="margin-left:6px;background:#fee2e2;color:#dc2626;border-color:#fca5a5;">
+      &#128465; Clear All Old Logs
+    </button>
+  </div>
+
+  <div id="fileTableWrap">
+    <table class="sd-file-table">
+      <thead>
+        <tr>
+          <th>Filename</th>
+          <th>Size</th>
+          <th>Last Modified</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="fileTableBody">
+        <tr><td colspan="4" style="color:#aaa;padding:16px;">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="site-footer">&copy; SHRDC. All rights reserved.</div>
+</div>
+
+<script>
+/* ── Load SD info ── */
+async function loadSDInfo() {
+  try {
+    const d = await (await fetch('/sdInfo')).json();
+
+    const badge = document.getElementById('sdStatusBadge');
+    if (d.mounted) {
+      badge.textContent = 'Mounted';
+      badge.className   = 'mc-value green';
+    } else {
+      badge.textContent = 'Not Mounted';
+      badge.className   = 'mc-value red';
+    }
+
+    document.getElementById('sdCardType').textContent = d.mounted ? d.cardType : '--';
+    document.getElementById('sdTotal').textContent    = d.mounted ? d.totalMB + ' MB' : '--';
+    document.getElementById('sdUsed').textContent     = d.mounted ? d.usedMB  + ' MB' : '--';
+    document.getElementById('sdFree').textContent     = d.mounted ? d.freeMB  + ' MB' : '--';
+
+    /* Logging settings */
+    const cb = document.getElementById('logEnabled');
+    cb.checked = d.logEnabled;
+    document.getElementById('logEnabledLabel').textContent  = d.logEnabled ? 'Enabled' : 'Disabled';
+    document.getElementById('logInterval').value            = d.logIntervalSec;
+    document.getElementById('logRotateInterval').value      = d.logRotateIntervalSec || 3600;
+    document.getElementById('currentLogFile').textContent   = d.currentLogFile || '--';
+
+  } catch (e) { console.error(e); }
+}
+
+/* ── Load file list ── */
+async function loadFiles() {
+  const tbody = document.getElementById('fileTableBody');
+  tbody.innerHTML = '<tr><td colspan="4" style="color:#aaa;padding:12px;">Loading…</td></tr>';
+  try {
+    const files = await (await fetch('/sdFiles')).json();
+    if (!Array.isArray(files) || files.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="color:#aaa;padding:12px;">No files found on SD card.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = files.map(f => {
+      const sizeStr = f.size > 1048576
+        ? (f.size / 1048576).toFixed(2) + ' MB'
+        : f.size > 1024
+          ? (f.size / 1024).toFixed(1) + ' KB'
+          : f.size + ' B';
+      return '<tr>' +
+        '<td style="font-family:monospace;text-align:left;padding:8px 12px;">' + escHtml(f.name) + '</td>' +
+        '<td style="color:#555;">' + sizeStr + '</td>' +
+        '<td style="color:#555;font-size:13px;white-space:nowrap;">' + escHtml(f.lastWrite || '--') + '</td>' +
+        '<td>' +
+          '<button class="btn-download" onclick="downloadFile(\'' + escHtml(f.name) + '\')">&#11015; Download</button> ' +
+          '<button class="btn-view-file" onclick="viewFile(\''    + escHtml(f.name) + '\')">&#128065; Preview</button> ' +
+          '<button class="btn-delete-file" onclick="deleteFile(\''+ escHtml(f.name) + '\')">&#128465; Delete</button>' +
+        '</td>' +
+      '</tr>';
+    }).join('');
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="4" style="color:#dc2626;padding:12px;">Error loading files.</td></tr>';
+  }
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function downloadFile(name) {
+  window.location.href = '/sdDownload?file=' + encodeURIComponent(name);
+}
+
+async function deleteFile(name) {
+  if (!confirm('Delete "' + name + '" from SD card?')) return;
+  const r = await fetch('/sdDelete?file=' + encodeURIComponent(name), { method: 'POST' });
+  if (r.ok) loadFiles();
+  else alert('Delete failed: ' + await r.text());
+}
+
+async function viewFile(name) {
+  try {
+    const txt = await (await fetch('/sdRead?file=' + encodeURIComponent(name))).text();
+    const win = window.open('', '_blank');
+    win.document.write('<pre style="font-size:13px;font-family:monospace;padding:16px;white-space:pre-wrap;">' +
+      escHtml(txt) + '</pre>');
+    win.document.title = name;
+  } catch (e) { alert('Preview failed.'); }
+}
+
+/* ── Log settings ── */
+async function saveLogConfig() {
+  const interval       = document.getElementById('logInterval').value;
+  const enabled        = document.getElementById('logEnabled').checked ? '1' : '0';
+  const rotateInterval = document.getElementById('logRotateInterval').value;
+  const body = 'interval='       + encodeURIComponent(interval) +
+               '&enabled='       + enabled +
+               '&rotateInterval='+ encodeURIComponent(rotateInterval);
+  await fetch('/sdLogConfig', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body
+  });
+  document.getElementById('logEnabledLabel').textContent = enabled === '1' ? 'Enabled' : 'Disabled';
+}
+
+async function takeSnapshot() {
+  const r = await fetch('/sdSnapshot', { method: 'POST' });
+  const msg = document.getElementById('snapshotMsg');
+  if (r.ok) {
+    msg.textContent = '✓ Snapshot written!';
+    setTimeout(() => { msg.textContent = ''; loadFiles(); }, 2000);
+  } else {
+    msg.style.color = '#dc2626';
+    msg.textContent = 'Failed.';
+  }
+}
+
+async function clearAllLogs() {
+  if (!confirm('Delete ALL log files except the current active log? This cannot be undone.')) return;
+  const r = await fetch('/sdClearAllLogs', { method: 'POST' });
+  const txt = await r.text();
+  if (r.ok) { alert(txt); loadFiles(); }
+  else alert('Failed: ' + txt);
+}
+
+/* ── Init ── */
+loadSDInfo();
+loadFiles();
+setInterval(loadSDInfo, 10000);
+</script>
+</body>
+</html>

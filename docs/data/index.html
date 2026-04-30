@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ESP32 Dashboard</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<!-- ── Fixed Top Navigation Bar ── -->
+<nav class="topnav">
+  <img src="/shrdc_logo.png" alt="SHRDC">
+  <div class="topnav-links">
+    <a href="/"           class="nav-link active">Dashboard</a>
+    <a href="/monitoring" class="nav-link">Monitoring</a>
+    <a href="/mqtt"       class="nav-link">MQTT Config</a>
+    <a href="/rs485"      class="nav-link">RS485 Config</a>
+    <a href="/sdcard"     class="nav-link">SD Card</a>
+    <a href="/telegram"   class="nav-link">Telegram</a>
+  </div>
+  <img src="/msf_logo.png" alt="MSF">
+  <div class="topnav-right">
+    <a href="/logout" class="btn-logout">Logout</a>
+  </div>
+</nav>
+
+<!-- ── Main Container ── -->
+<div class="container">
+
+  <!-- Header: title + live clock -->
+  <div class="dash-header">
+    <h1 class="dash-title">ESP32 Dashboard</h1>
+    <div id="dateTimeBox">
+      <div class="dt-time" id="clockTime">--:--:--</div>
+      <div id="clockDate">--- --, ----</div>
+    </div>
+  </div>
+
+  <!-- IP / Network / Machine State row -->
+  <div class="top-info-row">
+    <span class="info-chip"><b>IP:</b> <span id="ipAddr">?</span></span>
+    <span class="info-chip"><b>Network:</b> <span id="networkType">?</span></span>
+    <span id="machineStateBadge" class="unknown">&#9679; UNKNOWN</span>
+  </div>
+
+  <!-- ── Metrics (left) + ESP32 Health (right) ── -->
+  <div class="dash-body">
+
+    <!-- Process Metrics -->
+    <div class="metrics-panel">
+      <div class="panel-section-label">Process Metrics</div>
+      <div class="metrics-grid">
+
+        <div class="metric-card">
+          <span class="mc-label">Runtime</span>
+          <span class="mc-value green" id="metRuntime">00:00:00</span>
+          <span class="mc-sub">Total RUNNING time</span>
+        </div>
+
+        <div class="metric-card">
+          <span class="mc-label">Downtime</span>
+          <span class="mc-value red" id="metDowntime">00:00:00</span>
+          <span class="mc-sub">Total STOPPED time</span>
+        </div>
+
+        <div class="metric-card">
+          <span class="mc-label">Cycle Time</span>
+          <span class="mc-value amber" id="metCycle">--</span>
+          <span class="mc-sub">Last DI4 to DI6 cycle</span>
+        </div>
+
+        <div class="metric-card">
+          <span class="mc-label">Rejects</span>
+          <span class="mc-value red" id="metRejects">0</span>
+          <span class="mc-sub">Metal detections</span>
+        </div>
+
+        <div class="metric-card" style="grid-column: span 2;">
+          <span class="mc-label">Efficiency</span>
+          <span class="mc-value" id="metEfficiency">--</span>
+          <span class="mc-sub" id="metEffSub">Runtime / (Runtime + Downtime)</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ESP32 Health -->
+    <div class="health-panel">
+      <div class="panel-section-label">ESP32 Health</div>
+      <div class="metrics-grid">
+
+        <div class="metric-card">
+          <span class="mc-label">Internal Temp</span>
+          <span class="mc-value" id="hpTemp">--</span>
+          <span class="mc-sub">Chip temperature</span>
+        </div>
+
+        <div class="metric-card">
+          <span class="mc-label">Free Heap</span>
+          <span class="mc-value" id="hpHeap">--</span>
+          <span class="mc-sub">Available RAM</span>
+        </div>
+
+        <div class="metric-card">
+          <span class="mc-label">WiFi RSSI</span>
+          <span class="mc-value" id="hpRssi">--</span>
+          <span class="mc-sub">Signal strength</span>
+        </div>
+
+        <div class="metric-card">
+          <span class="mc-label">CPU Freq</span>
+          <span class="mc-value" id="hpCpu">--</span>
+          <span class="mc-sub">Clock speed</span>
+        </div>
+
+        <div class="metric-card" style="grid-column: span 2;">
+          <span class="mc-label">Uptime</span>
+          <span class="mc-value green" id="hpUptime">--</span>
+          <span class="mc-sub">Time since last boot</span>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Digital IO -->
+  <div class="io-wrapper">
+    <div class="io-box">
+      <h2>Digital Inputs</h2>
+      <div class="io-list">
+        <div class="io-item">DI1: <span class="di-status" id="di0">?</span></div>
+        <div class="io-item">DI2: <span class="di-status" id="di1">?</span></div>
+        <div class="io-item">DI3: <span class="di-status" id="di2">?</span></div>
+        <div class="io-item">DI4: <span class="di-status" id="di3">?</span></div>
+        <div class="io-item">DI5: <span class="di-status" id="di4">?</span></div>
+        <div class="io-item">DI6: <span class="di-status" id="di5">?</span></div>
+        <div class="io-item">DI7: <span class="di-status" id="di6">?</span></div>
+        <div class="io-item">DI8: <span class="di-status" id="di7">?</span></div>
+      </div>
+    </div>
+
+    <div class="io-box">
+      <h2>Digital Outputs</h2>
+      <div class="io-list">
+        <div class="io-item">DO1: <span class="do-status" id="do0">?</span> <button onclick="toggle(0)">Toggle</button></div>
+        <div class="io-item">DO2: <span class="do-status" id="do1">?</span> <button onclick="toggle(1)">Toggle</button></div>
+        <div class="io-item">DO3: <span class="do-status" id="do2">?</span> <button onclick="toggle(2)">Toggle</button></div>
+        <div class="io-item">DO4: <span class="do-status" id="do3">?</span> <button onclick="toggle(3)">Toggle</button></div>
+        <div class="io-item">DO5: <span class="do-status" id="do4">?</span> <button onclick="toggle(4)">Toggle</button></div>
+        <div class="io-item">DO6: <span class="do-status" id="do5">?</span> <button onclick="toggle(5)">Toggle</button></div>
+        <div class="io-item">DO7: <span class="do-status" id="do6">?</span> <button onclick="toggle(6)">Toggle</button></div>
+        <div class="io-item">DO8: <span class="do-status" id="do7">?</span> <button onclick="toggle(7)">Toggle</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="site-footer">&copy; SHRDC. All rights reserved.</div>
+</div>
+
+<script>
+function toggle(ch) {
+  fetch('/toggle?ch=' + ch).catch(e => console.error(e));
+}
+
+/* ── Live clock ── */
+function updateClock() {
+  const now    = new Date();
+  const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('clockTime').textContent =
+    String(now.getHours()).padStart(2,'0') + ':' +
+    String(now.getMinutes()).padStart(2,'0') + ':' +
+    String(now.getSeconds()).padStart(2,'0');
+  document.getElementById('clockDate').textContent =
+    days[now.getDay()] + ', ' + months[now.getMonth()] + ' ' +
+    now.getDate() + ' ' + now.getFullYear();
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+function fmtMs(ms) {
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s  / 60);
+  const h = Math.floor(m  / 60);
+  return String(h).padStart(2,'0') + ':' +
+         String(m % 60).padStart(2,'0') + ':' +
+         String(s % 60).padStart(2,'0');
+}
+
+function fmtUptime(ms) {
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s  / 60);
+  const h = Math.floor(m  / 60);
+  const d = Math.floor(h  / 24);
+  if (d > 0)
+    return d + 'd ' + String(h % 24).padStart(2,'0') + ':' +
+           String(m % 60).padStart(2,'0') + ':' +
+           String(s % 60).padStart(2,'0');
+  return String(h).padStart(2,'0') + ':' +
+         String(m % 60).padStart(2,'0') + ':' +
+         String(s % 60).padStart(2,'0');
+}
+
+function updateMachineState(state) {
+  const b = document.getElementById('machineStateBadge');
+  b.textContent = 'Machine: ' + state;
+  b.className   = '';
+  if      (state === 'RUNNING') b.classList.add('running');
+  else if (state === 'STOPPED') b.classList.add('stopped');
+  else                          b.classList.add('unknown');
+}
+
+/* ── ESP32 Health ── */
+async function fetchHealth() {
+  try {
+    const h = await (await fetch('/getHealth')).json();
+
+    const tempEl = document.getElementById('hpTemp');
+    if (typeof h.temp === 'number') {
+      tempEl.textContent = h.temp.toFixed(1) + ' \u00b0C';
+      tempEl.className   = 'mc-value ' +
+        (h.temp >= 80 ? 'red' : h.temp >= 65 ? 'amber' : 'green');
+    } else { tempEl.textContent = '--'; tempEl.className = 'mc-value'; }
+
+    const heapEl = document.getElementById('hpHeap');
+    if (typeof h.freeHeap === 'number') {
+      heapEl.textContent = (h.freeHeap / 1024).toFixed(1) + ' KB';
+      heapEl.className   = 'mc-value ' +
+        (h.freeHeap < 20000 ? 'red' : h.freeHeap < 50000 ? 'amber' : 'green');
+    } else { heapEl.textContent = '--'; heapEl.className = 'mc-value'; }
+
+    const rssiEl = document.getElementById('hpRssi');
+    if (h.rssi === 0) {
+      rssiEl.textContent = 'Ethernet';
+      rssiEl.className   = 'mc-value green';
+    } else if (typeof h.rssi === 'number') {
+      rssiEl.textContent = h.rssi + ' dBm';
+      rssiEl.className   = 'mc-value ' +
+        (h.rssi < -80 ? 'red' : h.rssi < -65 ? 'amber' : 'green');
+    } else { rssiEl.textContent = '--'; rssiEl.className = 'mc-value'; }
+
+    const cpuEl = document.getElementById('hpCpu');
+    cpuEl.textContent = typeof h.cpuFreq === 'number' ? h.cpuFreq + ' MHz' : '--';
+    cpuEl.className   = 'mc-value';
+
+    document.getElementById('hpUptime').textContent =
+      typeof h.uptime === 'number' ? fmtUptime(h.uptime) : '--';
+
+  } catch (e) { console.error(e); }
+}
+
+function getDashVarValues(m) {
+  return {
+    'Runtime[s]':      m.runtime    / 1000,
+    'Downtime[s]':     m.downtime   / 1000,
+    'Last Cycle[s]':   m.cycleTime  / 1000,
+    'Rejects':         m.rejects,
+    'Pos Start[s]':    (m.onTimes ? m.onTimes[3] : 0) / 1000,
+    'Pos Middle[s]':   (m.onTimes ? m.onTimes[4] : 0) / 1000,
+    'Pos End[s]':      (m.onTimes ? m.onTimes[5] : 0) / 1000,
+    'Metal Detect[s]': (m.onTimes ? m.onTimes[6] : 0) / 1000,
+    'DI1 Count':       m.triggers ? m.triggers[0] : 0,
+    'DI2 Count':       m.triggers ? m.triggers[1] : 0,
+    'DI3 Count':       m.triggers ? m.triggers[2] : 0,
+    'DI4 Count':       m.triggers ? m.triggers[3] : 0,
+    'DI5 Count':       m.triggers ? m.triggers[4] : 0,
+    'DI6 Count':       m.triggers ? m.triggers[5] : 0,
+    'DI7 Count':       m.triggers ? m.triggers[6] : 0,
+    'DI8 Count':       m.triggers ? m.triggers[7] : 0
+  };
+}
+
+function evalCustomFormula(formula, m) {
+  const vals = getDashVarValues(m);
+  let expr = formula;
+  Object.keys(vals).sort((a, b) => b.length - a.length).forEach(k => {
+    expr = expr.split(k).join(String(vals[k]));
+  });
+  if (!/^[\d+\-*\/().\s]+$/.test(expr)) throw new Error('Invalid');
+  const result = Function('"use strict";return(' + expr + ')')();
+  if (!isFinite(result)) throw new Error('Not finite');
+  return result;
+}
+
+function computeDashEfficiency(m) {
+  const formula = localStorage.getItem('customEffFormula');
+  if (formula) {
+    try { return { value: evalCustomFormula(formula, m).toFixed(1), custom: true }; }
+    catch (e) { /* fall through */ }
+  }
+  const total = m.runtime + m.downtime;
+  if (total > 0) return { value: ((m.runtime / total) * 100).toFixed(1), custom: false };
+  return null;
+}
+
+async function fetchStatus() {
+  try {
+    const d = await (await fetch('/status')).json();
+    d.inputs.forEach((v, i) => {
+      const el = document.getElementById('di' + i);
+      el.textContent = v ? 'ON' : 'OFF';
+      el.className   = v ? 'di-status on' : 'di-status off';
+    });
+    d.outputs.forEach((v, i) => {
+      const el = document.getElementById('do' + i);
+      el.textContent = v ? 'ON' : 'OFF';
+      el.className   = v ? 'do-status on' : 'do-status off';
+    });
+    document.getElementById('ipAddr').textContent      = d.ip;
+    document.getElementById('networkType').textContent = d.network;
+    if (d.machineState) updateMachineState(d.machineState);
+  } catch (e) { console.error(e); }
+}
+
+async function fetchMetrics() {
+  try {
+    const m = await (await fetch('/getMetrics')).json();
+    document.getElementById('metRuntime').textContent  = fmtMs(m.runtime);
+    document.getElementById('metDowntime').textContent = fmtMs(m.downtime);
+    document.getElementById('metRejects').textContent  = m.rejects;
+    document.getElementById('metCycle').textContent =
+      m.cycleTime > 0 ? (m.cycleTime / 1000).toFixed(2) + ' s' : '--';
+
+    const effObj = computeDashEfficiency(m);
+    const effEl  = document.getElementById('metEfficiency');
+    const subEl  = document.getElementById('metEffSub');
+    if (effObj) {
+      const n = parseFloat(effObj.value);
+      effEl.textContent = effObj.value + '%';
+      effEl.className   = 'mc-value ' + (n >= 80 ? 'green' : n >= 50 ? 'amber' : 'red');
+      subEl.textContent = effObj.custom
+        ? 'Custom formula \u2014 edit on Monitoring page'
+        : 'Runtime / (Runtime + Downtime)';
+    } else {
+      effEl.textContent = '--';
+      effEl.className   = 'mc-value';
+      subEl.textContent = 'Runtime / (Runtime + Downtime)';
+    }
+  } catch (e) { console.error(e); }
+}
+
+setInterval(fetchStatus,  500);
+setInterval(fetchMetrics, 1000);
+setInterval(fetchHealth,  2000);
+fetchStatus();
+fetchMetrics();
+fetchHealth();
+</script>
+</body>
+</html>
