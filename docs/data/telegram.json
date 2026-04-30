@@ -1,5 +1,5 @@
 {
-  "botToken": "8636692493:AAFr4QJU0TqQ2L-7XIvEk6YBBLFGVI_YDiU",
-  "chatId": "5078734373",
+  "botToken": "<YOUR_BOT_TOKEN>",
+  "chatId": "<YOUR_CHAT_ID>",
   "enabled": true
 }
