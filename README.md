@@ -61,8 +61,8 @@ A browser-based monitoring and control dashboard running entirely on a **Wavesha
 ## Project Structure
 
 ```
-ESP32_test/
-├── ESP32_test.ino          ← Arduino firmware (flash this first)
+ESP32_GUI/
+├── ESP32_GUI.ino          ← Arduino firmware (flash this first)
 └── data/                   ← Web files (upload separately via LittleFS tool)
     ├── index.html          ← Dashboard
     ├── iot.html            ← IoT Config (MQTT, RS485, DO Logic Rules)
