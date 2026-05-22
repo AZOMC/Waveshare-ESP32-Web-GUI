@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ESP32 Dashboard</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<nav class="topnav">
+  <img src="/shrdc_logo.png" alt="SHRDC">
+  <div class="topnav-links">
+    <a href="/"         class="nav-link active">Dashboard</a>
+    <a href="/iot"      class="nav-link">IoT Config</a>
+    <a href="/sdcard"   class="nav-link">SD Card</a>
+    <a href="/telegram" class="nav-link">Telegram</a>
+  </div>
+  <img src="/msf_logo.png" alt="MSF">
+  <div class="topnav-right">
+    <a href="/logout" class="btn-logout">Logout</a>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="dash-header">
+    <h1 class="dash-title">ESP32 Dashboard</h1>
+    <div id="dateTimeBox">
+      <div class="dt-time" id="clockTime">--:--:--</div>
+      <div id="clockDate">--- --, ----</div>
+    </div>
+  </div>
+
+  <!-- Info Row -->
+  <div class="top-info-row">
+    <span class="info-chip"><b>IP:</b> <span id="ipAddr">?</span></span>
+    <span class="info-chip"><b>Network:</b> <span id="networkType">?</span></span>
+    <span id="machineStateBadge" class="unknown">&#9679; UNKNOWN</span>
+  </div>
+
+  <!-- Metrics + Health -->
+  <div class="dash-body">
+    <div class="metrics-panel">
+      <div class="panel-section-label">Process Metrics</div>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <span class="mc-label">Runtime</span>
+          <span class="mc-value green" id="metRuntime">00:00:00</span>
+          <span class="mc-sub">Total RUNNING time</span>
+        </div>
+        <div class="metric-card">
+          <span class="mc-label">Downtime</span>
+          <span class="mc-value red" id="metDowntime">00:00:00</span>
+          <span class="mc-sub">Total STOPPED time</span>
+        </div>
+        <div class="metric-card">
+          <span class="mc-label">Cycle Time</span>
+          <span class="mc-value amber" id="metCycle">--</span>
+          <span class="mc-sub">Last DI4&#x2192;DI6 cycle</span>
+        </div>
+        <div class="metric-card">
+          <span class="mc-label">Rejects</span>
+          <span class="mc-value red" id="metRejects">0</span>
+          <span class="mc-sub">Metal detections</span>
+        </div>
+        <div class="metric-card" style="grid-column:span 2;">
+          <span class="mc-label">Efficiency</span>
+          <span class="mc-value" id="metEfficiency">--</span>
+          <span class="mc-sub" id="metEffSub">Runtime / (Runtime + Downtime)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="health-panel">
+      <div class="panel-section-label">ESP32 Health</div>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <span class="mc-label">Internal Temp</span>
+          <span class="mc-value" id="hpTemp">--</span>
+          <span class="mc-sub">Chip temperature</span>
+        </div>
+        <div class="metric-card">
+          <span class="mc-label">Free Heap</span>
+          <span class="mc-value" id="hpHeap">--</span>
+          <span class="mc-sub">Available RAM</span>
+        </div>
+        <div class="metric-card">
+          <span class="mc-label">WiFi RSSI</span>
+          <span class="mc-value" id="hpRssi">--</span>
+          <span class="mc-sub">Signal strength</span>
+        </div>
+        <div class="metric-card">
+          <span class="mc-label">CPU Freq</span>
+          <span class="mc-value" id="hpCpu">--</span>
+          <span class="mc-sub">Clock speed</span>
+        </div>
+        <div class="metric-card" style="grid-column:span 2;">
+          <span class="mc-label">Uptime</span>
+          <span class="mc-value green" id="hpUptime">--</span>
+          <span class="mc-sub">Time since last boot</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Digital I/O (no LED circles) -->
+  <div class="section-title" style="margin-top:4px;">Digital I/O</div>
+  <div class="io-wrapper">
+    <div class="io-box">
+      <h2>Digital Inputs</h2>
+      <div id="diItems"></div>
+    </div>
+    <div class="io-box">
+      <h2>Digital Outputs</h2>
+      <div id="doItems"></div>
+    </div>
+  </div>
+
+  <!-- DO Logic Rules -->
+  <div class="section-title" style="margin-top:22px;">
+    Digital Output Logic Rules
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span style="font-size:11px;color:#888;font-weight:400;max-width:260px;line-height:1.4;">
+        Enabled rules control the DO automatically. Manual toggle still works but is overridden on next DI change.
+      </span>
+      <button class="btn-add-reg" onclick="showRuleForm(-1)">+ Add Rule</button>
+    </div>
+  </div>
+  <div id="rulesTableWrap"></div>
+
+  <!-- Rule builder form -->
+  <div id="ruleFormPanel" class="rule-form-panel" style="display:none;">
+    <h4 id="ruleFormTitle">Add Logic Rule</h4>
+    <input type="hidden" id="ruleEditIdx" value="-1">
+
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;flex-wrap:wrap;padding:10px 14px;background:#f9f9f9;border-radius:8px;border:1px solid #e8e8e8;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <label style="font-size:13px;font-weight:600;color:#555;white-space:nowrap;">Output Channel</label>
+        <select id="ruleDoSel" style="padding:6px 10px;border:1px solid #ccc;border-radius:6px;font-size:13px;">
+          <option value="0">DO1</option><option value="1">DO2</option>
+          <option value="2">DO3</option><option value="3">DO4</option>
+          <option value="4">DO5</option><option value="5">DO6</option>
+          <option value="6">DO7</option><option value="7">DO8</option>
+        </select>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-left:auto;">
+        <label style="font-size:13px;font-weight:600;color:#555;white-space:nowrap;">Enabled</label>
+        <label class="sd-toggle">
+          <input type="checkbox" id="ruleEnabled" checked>
+          <span class="sd-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div style="font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:#888;font-weight:700;margin-bottom:8px;">Conditions</div>
+    <div id="condList"></div>
+
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+      <button class="btn-calc" onclick="addCondition()">+ Add Condition</button>
+      <button class="btn-cond-remove" onclick="removeLastCondition()" style="padding:5px 12px;">- Remove Last</button>
+    </div>
+
+    <div class="rule-note">
+      When this rule is <b>enabled</b>, the DO output is set by the logic above and updated on every DI scan.
+      Disable the rule to regain full manual control of that output.
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+      <button class="btn-save-formula" onclick="saveRule()">Save Rule</button>
+      <button class="btn-clear-formula" onclick="hideRuleForm()">Cancel</button>
+      <span id="ruleFormMsg" style="font-size:12px;font-weight:700;line-height:2.4;margin-left:4px;"></span>
+    </div>
+  </div>
+
+  <!-- DI Trigger Counters -->
+  <div class="section-title" style="margin-top:24px;">
+    DI Trigger Counters
+    <div style="display:flex;gap:6px;">
+      <button class="btn-reset-all" onclick="resetTarget('all')">Reset All Counters</button>
+      <button class="btn-reset-all" onclick="resetTarget('runtime')" style="background:#d97706;">Reset Runtime</button>
+    </div>
+  </div>
+  <table class="mon-table">
+    <thead>
+      <tr>
+        <th>Input</th>
+        <th>Description <span style="font-weight:400;color:#bbb;text-transform:none;letter-spacing:0;">(click to edit)</span></th>
+        <th>Live</th>
+        <th>Trigger Count</th>
+        <th>Total ON Time</th>
+        <th>Reset</th>
+      </tr>
+    </thead>
+    <tbody id="counterTableBody"></tbody>
+  </table>
+
+  <!-- Calc + Formula -->
+  <div class="calc-formula-row">
+    <div class="calc-col">
+      <div class="section-title">Real-Time Calculator</div>
+      <div class="calc-box">
+        <div class="calc-row">
+          <label>Value A</label>
+          <select id="calcA" onchange="toggleCustom('calcA','calcACustom')">
+            <option value="runtime">Runtime (s)</option>
+            <option value="downtime">Downtime (s)</option>
+            <option value="rejects">Rejects</option>
+            <option value="cycle">Cycle Time (s)</option>
+            <option value="custom">Custom number</option>
+          </select>
+          <input type="number" id="calcACustom" placeholder="0" style="display:none;">
+        </div>
+        <div class="calc-row">
+          <label>Operation</label>
+          <select id="calcOp">
+            <option value="add">+ Add</option>
+            <option value="sub">- Subtract</option>
+            <option value="mul">* Multiply</option>
+            <option value="div">/ Divide</option>
+          </select>
+        </div>
+        <div class="calc-row">
+          <label>Value B</label>
+          <select id="calcB" onchange="toggleCustom('calcB','calcBCustom')">
+            <option value="runtime">Runtime (s)</option>
+            <option value="downtime">Downtime (s)</option>
+            <option value="rejects">Rejects</option>
+            <option value="cycle">Cycle Time (s)</option>
+            <option value="custom">Custom number</option>
+          </select>
+          <input type="number" id="calcBCustom" placeholder="0" style="display:none;">
+        </div>
+        <div class="calc-row">
+          <label>Result</label>
+          <div class="calc-result" id="calcResult"></div>
+          <button class="btn-calc" onclick="doCalc()">Calculate</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="calc-col">
+      <div class="section-title">
+        Custom Efficiency Formula
+        <span class="formula-active-badge" id="formulaActiveBadge">&#9679; Active</span>
+      </div>
+      <div class="formula-box">
+        <div class="formula-input-row">
+          <div class="formula-input-wrap">
+            <input type="text" id="formulaInput"
+                   placeholder="e.g. Runtime[s] / (Runtime[s] + Downtime[s]) * 100"
+                   autocomplete="off" spellcheck="false">
+            <div class="ac-dropdown" id="acDropdown"></div>
+          </div>
+        </div>
+        <div class="formula-btn-row">
+          <button class="btn-save-formula"  onclick="saveFormula()">Save Formula</button>
+          <button class="btn-clear-formula" onclick="clearFormula()">Use Default</button>
+        </div>
+        <div class="formula-status"  id="formulaStatus"></div>
+        <div class="formula-preview" id="formulaPreview"></div>
+        <p class="formula-hint">Result shown with <b>%</b> &mdash; include <b>*100</b> for 0&ndash;1 ratios. Supports <code>+ - * / ( )</code></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="site-footer">&copy; SHRDC. All rights reserved.</div>
+</div>
+
+<script>
+// ── DI label storage ──────────────────────────────────────────────
+const DEFAULT_LABELS = ['Emergency','Start Seq.','Reset Seq.','Pos Start','Pos Middle','Pos End','Metal Detect','Spare'];
+function getDiLabel(i) { return localStorage.getItem('diLabel_'+i) || DEFAULT_LABELS[i]; }
+function setDiLabel(i, v) { localStorage.setItem('diLabel_'+i, v || DEFAULT_LABELS[i]); }
+
+// ── Build I/O rows (no LEDs on DI) ───────────────────────────────
+(function buildIO() {
+  const diDiv = document.getElementById('diItems');
+  const doDiv = document.getElementById('doItems');
+  for (let i = 0; i < 8; i++) {
+    diDiv.innerHTML +=
+      '<div class="io-item">' +
+        '<span class="io-ch">DI'+(i+1)+'</span>' +
+        '<span class="di-status off" id="di'+i+'">OFF</span>' +
+      '</div>';
+    doDiv.innerHTML +=
+      '<div class="io-item">' +
+        '<span class="io-ch">DO'+(i+1)+'</span>' +
+        '<span class="do-status off" id="do'+i+'">OFF</span>' +
+        '<span class="do-rule-badge rule-on" id="doRuleBadge'+i+'" style="display:none;">Rule</span>' +
+        '<button onclick="toggle('+i+')" style="margin-left:4px;font-size:11px;padding:2px 8px;">Toggle</button>' +
+      '</div>';
+  }
+})();
+
+// ── Build counter table rows ──────────────────────────────────────
+(function buildTable() {
+  const tbody = document.getElementById('counterTableBody');
+  for (let i = 0; i < 8; i++) {
+    tbody.innerHTML +=
+      '<tr>' +
+        '<td><b>DI'+(i+1)+'</b></td>' +
+        '<td><span class="di-label-text" id="lbl'+i+'" onclick="editLabel('+i+')">'+escHtml(getDiLabel(i))+'</span></td>' +
+        '<td><span class="di-status off" id="tbldi'+i+'">OFF</span></td>' +
+        '<td><span class="count-val" id="cnt'+i+'">0</span></td>' +
+        '<td><span class="time-val" id="ton'+i+'">00:00:00</span></td>' +
+        '<td><button class="btn-reset" onclick="resetTarget(\'di'+i+'\')">Reset</button></td>' +
+      '</tr>';
+  }
+})();
+
+// ── Utilities ─────────────────────────────────────────────────────
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function editLabel(i) {
+  const span = document.getElementById('lbl'+i);
+  const inp = document.createElement('input');
+  inp.className = 'di-label-input'; inp.value = getDiLabel(i);
+  inp.onblur = inp.onkeydown = function(e) {
+    if (e.type==='keydown' && e.key!=='Enter') return;
+    const v = inp.value.trim() || DEFAULT_LABELS[i];
+    setDiLabel(i, v); span.textContent = v; inp.replaceWith(span);
+  };
+  span.replaceWith(inp); inp.focus(); inp.select();
+}
+
+function toggle(ch) { fetch('/toggle?ch='+ch).catch(e=>console.error(e)); }
+
+function fmtMs(ms) {
+  const s=Math.floor(ms/1000),m=Math.floor(s/60),h=Math.floor(m/60);
+  return String(h).padStart(2,'0')+':'+String(m%60).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+}
+function fmtUptime(ms) {
+  const s=Math.floor(ms/1000),m=Math.floor(s/60),h=Math.floor(m/60),d=Math.floor(h/24);
+  if(d>0) return d+'d '+String(h%24).padStart(2,'0')+':'+String(m%60).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+  return String(h).padStart(2,'0')+':'+String(m%60).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+}
+
+// ── Clock ─────────────────────────────────────────────────────────
+function updateClock() {
+  const now=new Date();
+  const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('clockTime').textContent=
+    String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+  document.getElementById('clockDate').textContent=
+    days[now.getDay()]+', '+months[now.getMonth()]+' '+now.getDate()+' '+now.getFullYear();
+}
+setInterval(updateClock,1000); updateClock();
+
+function updateMachineState(state) {
+  const b=document.getElementById('machineStateBadge');
+  b.textContent='Machine: '+state;
+  b.className=state==='RUNNING'?'running':state==='STOPPED'?'stopped':'unknown';
+}
+
+// ── Status fetch ──────────────────────────────────────────────────
+async function fetchStatus() {
+  try {
+    const d=await(await fetch('/status')).json();
+    d.inputs.forEach((v,i)=>{
+      const b=document.getElementById('di'+i), t=document.getElementById('tbldi'+i);
+      b.textContent=v?'ON':'OFF'; b.className=v?'di-status on':'di-status off';
+      t.textContent=v?'ON':'OFF'; t.className=v?'di-status on':'di-status off';
+    });
+    d.outputs.forEach((v,i)=>{
+      const el=document.getElementById('do'+i);
+      el.textContent=v?'ON':'OFF'; el.className=v?'do-status on':'do-status off';
+    });
+    document.getElementById('ipAddr').textContent=d.ip;
+    document.getElementById('networkType').textContent=d.network;
+    if(d.machineState) updateMachineState(d.machineState);
+  } catch(e){console.error(e);}
+}
+
+// ── Health fetch ──────────────────────────────────────────────────
+async function fetchHealth() {
+  try {
+    const h=await(await fetch('/getHealth')).json();
+    const t=document.getElementById('hpTemp');
+    if(typeof h.temp==='number'){t.textContent=h.temp.toFixed(1)+' \u00b0C';t.className='mc-value '+(h.temp>=80?'red':h.temp>=65?'amber':'green');}
+    const he=document.getElementById('hpHeap');
+    if(typeof h.freeHeap==='number'){he.textContent=(h.freeHeap/1024).toFixed(1)+' KB';he.className='mc-value '+(h.freeHeap<20000?'red':h.freeHeap<50000?'amber':'green');}
+    const rs=document.getElementById('hpRssi');
+    if(h.rssi===0){rs.textContent='Ethernet';rs.className='mc-value green';}
+    else if(typeof h.rssi==='number'){rs.textContent=h.rssi+' dBm';rs.className='mc-value '+(h.rssi<-80?'red':h.rssi<-65?'amber':'green');}
+    document.getElementById('hpCpu').textContent=typeof h.cpuFreq==='number'?h.cpuFreq+' MHz':'--';
+    document.getElementById('hpUptime').textContent=typeof h.uptime==='number'?fmtUptime(h.uptime):'--';
+  } catch(e){console.error(e);}
+}
+
+// ══════════════════════════════════════════
+// DO LOGIC RULES
+// ══════════════════════════════════════════
+let doRules = [];
+
+async function loadRules() {
+  try {
+    doRules = await (await fetch('/getDoRules')).json();
+    renderRulesTable(); updateRuleBadges();
+  } catch(e) { console.error('loadRules:',e); }
+}
+
+function buildExprStr(conds) {
+  if (!conds || !conds.length) return '(no conditions)';
+  return conds.map((c,i)=>
+    (i>0 ? ' '+(c.op===1?'AND':'OR')+' ' : '') +
+    'DI'+(c.diIdx+1)+' '+(c.state===1?'ON':'OFF')
+  ).join('');
+}
+
+function buildExprHtml(conds) {
+  if (!conds || !conds.length) return '<i style="color:#ccc;">no conditions</i>';
+  return conds.map((c,i)=>
+    (i>0 ? ' <b style="color:#3730a3;">'+(c.op===1?'AND':'OR')+'</b> ' : '') +
+    'DI'+(c.diIdx+1)+' <b>'+(c.state===1?'ON':'OFF')+'</b>'
+  ).join('');
+}
+
+function renderRulesTable() {
+  const wrap = document.getElementById('rulesTableWrap');
+  if (!doRules.length) {
+    wrap.innerHTML = '<div class="rule-empty">No logic rules configured. Click <b>+ Add Rule</b> to create one.</div>';
+    return;
+  }
+  let html = '<table class="rules-table"><colgroup><col class="col-num"><col class="col-do"><col class="col-expr"><col class="col-en"><col class="col-act"></colgroup><thead><tr><th>#</th><th>DO Channel</th><th>Logic Expression</th><th style="text-align:center;">Enabled</th><th>Actions</th></tr></thead><tbody>';
+  doRules.forEach((r,i) => {
+    html += '<tr>' +
+      '<td style="color:#aaa;font-size:11px;">'+(i+1)+'</td>' +
+      '<td><b>DO'+(r.doIdx+1)+'</b></td>' +
+      '<td><span class="rule-expr" title="'+escHtml(buildExprStr(r.conds))+'">'+buildExprHtml(r.conds)+'</span></td>' +
+      '<td style="text-align:center;"><label class="sd-toggle" style="margin:0 auto;display:block;width:46px;">' +
+        '<input type="checkbox"'+(r.enabled?' checked':'')+' onchange="toggleRule('+i+',this.checked)">' +
+        '<span class="sd-slider"></span>' +
+      '</label></td>' +
+      '<td><div style="display:flex;gap:4px;">' +
+        '<button class="btn-reg-edit" onclick="showRuleForm('+i+')">Edit</button>' +
+        '<button class="btn-reg-del"  onclick="deleteRule('+i+')">Del</button>' +
+      '</div></td>' +
+    '</tr>';
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+function updateRuleBadges() {
+  for (let i=0; i<8; i++) {
+    const b = document.getElementById('doRuleBadge'+i);
+    if (!b) continue;
+    const active = doRules.some(r=>r.doIdx===i&&r.enabled);
+    b.style.display = active ? '' : 'none';
+  }
+}
+
+async function toggleRule(idx, enabled) {
+  doRules[idx].enabled = enabled;
+  await pushRules(); updateRuleBadges();
+}
+
+async function deleteRule(idx) {
+  if (!confirm('Delete rule for DO'+(doRules[idx].doIdx+1)+'?')) return;
+  doRules.splice(idx,1);
+  await pushRules(); renderRulesTable(); updateRuleBadges();
+}
+
+async function pushRules() {
+  await fetch('/saveDoRules',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(doRules)});
+}
+
+// ── Rule form ─────────────────────────────────────────────────────
+let formConds = [];
+
+function showRuleForm(idx) {
+  const panel = document.getElementById('ruleFormPanel');
+  document.getElementById('ruleEditIdx').value=idx;
+  document.getElementById('ruleFormTitle').textContent=idx>=0?'Edit Logic Rule':'Add Logic Rule';
+  document.getElementById('ruleFormMsg').textContent='';
+  formConds=[];
+  if (idx>=0&&doRules[idx]) {
+    const r=doRules[idx];
+    document.getElementById('ruleDoSel').value=r.doIdx;
+    document.getElementById('ruleEnabled').checked=r.enabled;
+    formConds=r.conds.map(c=>({...c}));
+  } else {
+    document.getElementById('ruleDoSel').value='0';
+    document.getElementById('ruleEnabled').checked=true;
+    formConds=[{diIdx:0,state:1,op:0}];
+  }
+  renderCondList(); panel.style.display='';
+  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function hideRuleForm() { document.getElementById('ruleFormPanel').style.display='none'; formConds=[]; }
+function addCondition() { formConds.push({diIdx:0,state:1,op:1}); renderCondList(); }
+function removeLastCondition() { if(formConds.length>1){formConds.pop();renderCondList();} }
+function removeCond(idx) { formConds.splice(idx,1); renderCondList(); }
+
+function renderCondList() {
+  const list=document.getElementById('condList'); list.innerHTML='';
+  formConds.forEach((c,i)=>{
+    const row=document.createElement('div'); row.className='cond-row';
+    let html='';
+    if(i===0){
+      html+='<span style="font-size:12px;font-weight:700;color:#444;min-width:36px;">IF</span>';
+    } else {
+      html+='<select class="cond-op-sel" onchange="formConds['+i+'].op=parseInt(this.value)">' +
+        '<option value="1"'+(c.op===1?' selected':'')+'>AND</option>' +
+        '<option value="2"'+(c.op===2?' selected':'')+'>OR</option>' +
+        '</select>';
+    }
+    html+='<select onchange="formConds['+i+'].diIdx=parseInt(this.value)">';
+    for(let d=0;d<8;d++) html+='<option value="'+d+'"'+(c.diIdx===d?' selected':'')+'>DI'+(d+1)+'</option>';
+    html+='</select>';
+    html+='<select onchange="formConds['+i+'].state=parseInt(this.value)">' +
+      '<option value="1"'+(c.state===1?' selected':'')+'>ON</option>' +
+      '<option value="0"'+(c.state===0?' selected':'')+'>OFF</option>' +
+      '</select>';
+    if(i>0) html+='<button class="btn-cond-remove" onclick="removeCond('+i+')">X</button>';
+    row.innerHTML=html; list.appendChild(row);
+  });
+}
+
+async function saveRule() {
+  const msg=document.getElementById('ruleFormMsg');
+  if(!formConds.length){msg.style.color='#dc2626';msg.textContent='Add at least one condition';return;}
+  const rule={doIdx:parseInt(document.getElementById('ruleDoSel').value),enabled:document.getElementById('ruleEnabled').checked,conds:formConds.map(c=>({...c}))};
+  const idx=parseInt(document.getElementById('ruleEditIdx').value);
+  if(idx>=0) doRules[idx]=rule; else doRules.push(rule);
+  msg.style.color='#555'; msg.textContent='Saving...';
+  try {
+    await pushRules();
+    msg.style.color='#16a34a'; msg.textContent='Saved.';
+    setTimeout(()=>{hideRuleForm();renderRulesTable();updateRuleBadges();},600);
+  } catch(e){msg.style.color='#dc2626';msg.textContent='Save failed';}
+}
+
+// ══════════════════════════════════════════
+// FORMULA ENGINE
+// ══════════════════════════════════════════
+let availableVars=[], latestMetrics=null;
+
+async function loadVariables() {
+  try { const d=await(await fetch('/variables.json')).json(); availableVars=d.variables||[]; loadSavedFormula(); } catch(e){}
+}
+
+function getVarValues(m) {
+  const map={};
+  availableVars.forEach(v=>{
+    switch(v.key){
+      case 'Runtime[s]':map[v.key]=m.runtime/1000;break;
+      case 'Downtime[s]':map[v.key]=m.downtime/1000;break;
+      case 'Last Cycle[s]':map[v.key]=m.cycleTime/1000;break;
+      case 'Rejects':map[v.key]=m.rejects;break;
+      case 'Pos Start[s]':map[v.key]=(m.onTimes[3]||0)/1000;break;
+      case 'Pos Middle[s]':map[v.key]=(m.onTimes[4]||0)/1000;break;
+      case 'Pos End[s]':map[v.key]=(m.onTimes[5]||0)/1000;break;
+      case 'Metal Detect[s]':map[v.key]=(m.onTimes[6]||0)/1000;break;
+      case 'Emergency Count':map[v.key]=m.triggers[0]||0;break;
+      case 'Start Seq Count':map[v.key]=m.triggers[1]||0;break;
+      case 'Reset Seq Count':map[v.key]=m.triggers[2]||0;break;
+      case 'Pos Start Count':map[v.key]=m.triggers[3]||0;break;
+      case 'Pos Middle Count':map[v.key]=m.triggers[4]||0;break;
+      case 'Pos End Count':map[v.key]=m.triggers[5]||0;break;
+      default:map[v.key]=0;
+    }
+  });
+  return map;
+}
+
+function evaluateFormula(formula,metrics) {
+  const vals=getVarValues(metrics); let expr=formula;
+  Object.keys(vals).sort((a,b)=>b.length-a.length).forEach(k=>{expr=expr.split(k).join(String(vals[k]));});
+  if(!/^[\d+\-*\/().\s]+$/.test(expr)) throw new Error('Unknown variable');
+  const r=Function('"use strict";return('+expr+')')();
+  if(!isFinite(r)) throw new Error('Not finite'); return r;
+}
+
+function computeEfficiency(m) {
+  const f=localStorage.getItem('customEffFormula');
+  if(f){try{return{value:evaluateFormula(f,m).toFixed(1),custom:true};}catch(e){}}
+  const t=m.runtime+m.downtime; if(t>0) return{value:((m.runtime/t)*100).toFixed(1),custom:false}; return null;
+}
+
+function updateFormulaPreview() {
+  const f=document.getElementById('formulaInput').value.trim(), p=document.getElementById('formulaPreview');
+  if(!f||!latestMetrics){p.textContent='';return;}
+  try{const r=evaluateFormula(f,latestMetrics);p.textContent='Live preview: '+r.toFixed(2)+'%';p.style.color='#16a34a';}
+  catch(e){p.textContent='Preview error: '+e.message;p.style.color='#dc2626';}
+}
+
+function saveFormula() {
+  const f=document.getElementById('formulaInput').value.trim(),s=document.getElementById('formulaStatus');
+  if(!f){s.textContent='Enter a formula first.';s.className='formula-status err';return;}
+  if(latestMetrics){try{const r=evaluateFormula(f,latestMetrics);localStorage.setItem('customEffFormula',f);s.textContent='Saved. Result: '+r.toFixed(2)+'%';s.className='formula-status ok';document.getElementById('formulaActiveBadge').style.display='inline';}catch(e){s.textContent='Error: '+e.message;s.className='formula-status err';}}
+  else{localStorage.setItem('customEffFormula',f);s.textContent='Saved.';s.className='formula-status ok';document.getElementById('formulaActiveBadge').style.display='inline';}
+}
+
+function clearFormula() {
+  localStorage.removeItem('customEffFormula');
+  document.getElementById('formulaInput').value='';
+  document.getElementById('formulaStatus').textContent='Reverted to default.';
+  document.getElementById('formulaStatus').className='formula-status ok';
+  document.getElementById('formulaPreview').textContent='';
+  document.getElementById('formulaActiveBadge').style.display='none';
+}
+
+function loadSavedFormula() {
+  const s=localStorage.getItem('customEffFormula');
+  if(s){document.getElementById('formulaInput').value=s;document.getElementById('formulaActiveBadge').style.display='inline';}
+}
+
+(function(){
+  const inp=document.getElementById('formulaInput'),drop=document.getElementById('acDropdown');
+  inp.addEventListener('input',function(){
+    updateFormulaPreview();
+    const val=this.value,pos=this.selectionStart;
+    let start=pos; while(start>0&&!/[+\-*\/()]/.test(val[start-1]))start--;
+    const raw=val.slice(start,pos),token=raw.trimStart(),tokenStart=start+(raw.length-token.length);
+    if(token.length<1){drop.style.display='none';return;}
+    const matches=availableVars.filter(v=>v.key.toLowerCase().includes(token.toLowerCase())&&v.key.toLowerCase()!==token.toLowerCase());
+    if(!matches.length){drop.style.display='none';return;}
+    drop.innerHTML=matches.map(v=>'<div class="ac-item" data-key="'+v.key+'" data-ts="'+tokenStart+'" data-te="'+pos+'"><span class="ac-item-key">'+v.key+'</span></div>').join('');
+    drop.style.display='block';
+    drop.querySelectorAll('.ac-item').forEach(function(item){
+      item.addEventListener('mousedown',function(e){
+        e.preventDefault();
+        const key=this.dataset.key,ts=parseInt(this.dataset.ts),te=parseInt(this.dataset.te);
+        inp.value=val.slice(0,ts)+key+val.slice(te);drop.style.display='none';inp.focus();
+        inp.setSelectionRange(ts+key.length,ts+key.length);updateFormulaPreview();
+      });
+    });
+  });
+  inp.addEventListener('blur',function(){setTimeout(()=>{drop.style.display='none';},200);});
+})();
+
+// ── Metrics ───────────────────────────────────────────────────────
+async function fetchMetrics() {
+  try {
+    const m=await(await fetch('/getMetrics')).json(); latestMetrics=m;
+    for(let i=0;i<8;i++){document.getElementById('cnt'+i).textContent=m.triggers[i];document.getElementById('ton'+i).textContent=fmtMs(m.onTimes[i]);}
+    document.getElementById('metRuntime').textContent=fmtMs(m.runtime);
+    document.getElementById('metDowntime').textContent=fmtMs(m.downtime);
+    document.getElementById('metRejects').textContent=m.rejects;
+    document.getElementById('metCycle').textContent=m.cycleTime>0?(m.cycleTime/1000).toFixed(2)+' s':'--';
+    const effObj=computeEfficiency(m),effEl=document.getElementById('metEfficiency'),subEl=document.getElementById('metEffSub');
+    if(effObj){const n=parseFloat(effObj.value);effEl.textContent=effObj.value+'%';effEl.className='mc-value '+(n>=80?'green':n>=50?'amber':'red');subEl.textContent=effObj.custom?'Custom formula':'Runtime / (Runtime + Downtime)';}
+    else{effEl.textContent='--';effEl.className='mc-value';subEl.textContent='Runtime / (Runtime + Downtime)';}
+    const effForSD=(effObj&&effObj.custom)?effObj.value:'-1';
+    fetch('/setCustomEff',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'eff='+encodeURIComponent(effForSD)}).catch(()=>{});
+    updateFormulaPreview();
+  } catch(e){console.error(e);}
+}
+
+async function resetTarget(target) {
+  if(!confirm('Reset: '+target+'?')) return;
+  await fetch('/resetMetrics',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'target='+encodeURIComponent(target)});
+  fetchMetrics();
+}
+
+// ── Calculator ─────────────────────────────────────────────────────
+function toggleCustom(selId,inputId){document.getElementById(inputId).style.display=document.getElementById(selId).value==='custom'?'inline-block':'none';}
+function getMetricValue(key,customId){if(!latestMetrics)return 0;switch(key){case 'runtime':return latestMetrics.runtime/1000;case 'downtime':return latestMetrics.downtime/1000;case 'rejects':return latestMetrics.rejects;case 'cycle':return latestMetrics.cycleTime/1000;case 'custom':return parseFloat(document.getElementById(customId).value)||0;default:return 0;}}
+function doCalc(){const a=getMetricValue(document.getElementById('calcA').value,'calcACustom'),b=getMetricValue(document.getElementById('calcB').value,'calcBCustom'),op=document.getElementById('calcOp').value;let r;if(op==='add')r=a+b;else if(op==='sub')r=a-b;else if(op==='mul')r=a*b;else r=b!==0?a/b:'DIV/0';document.getElementById('calcResult').textContent=typeof r==='number'?r.toFixed(4):r;}
+
+// ── Init ──────────────────────────────────────────────────────────
+let _fetchingStatus=false, _fetchingMetrics=false, _fetchingHealth=false;
+
+async function fetchStatusGuarded(){if(_fetchingStatus)return;_fetchingStatus=true;try{await fetchStatus();}finally{_fetchingStatus=false;}}
+async function fetchMetricsGuarded(){if(_fetchingMetrics)return;_fetchingMetrics=true;try{await fetchMetrics();}finally{_fetchingMetrics=false;}}
+async function fetchHealthGuarded(){if(_fetchingHealth)return;_fetchingHealth=true;try{await fetchHealth();}finally{_fetchingHealth=false;}}
+
+setInterval(()=>{if(document.visibilityState!=='hidden')fetchStatusGuarded();},500);
+setInterval(()=>{if(document.visibilityState!=='hidden')fetchMetricsGuarded();},1000);
+setInterval(()=>{if(document.visibilityState!=='hidden')fetchHealthGuarded();},2000);
+fetchStatusGuarded(); fetchMetricsGuarded(); fetchHealthGuarded(); loadVariables(); loadRules();
+</script>
+</body>
+</html>

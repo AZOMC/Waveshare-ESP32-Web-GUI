@@ -1,0 +1,18 @@
+{
+  "variables": [
+    { "key": "Runtime[s]"},
+    { "key": "Downtime[s]"},
+    { "key": "Last Cycle[s]"},
+    { "key": "Rejects"},
+    { "key": "Pos Start[s]"},
+    { "key": "Pos Middle[s]"},
+    { "key": "Pos End[s]"},
+    { "key": "Metal Detect[s]"},
+    { "key": "Emergency Count"},
+    { "key": "Start Seq Count"},
+    { "key": "Reset Seq Count"},
+    { "key": "Pos Start Count"},
+    { "key": "Pos Middle Count"},
+    { "key": "Pos End Count"}
+  ]
+}

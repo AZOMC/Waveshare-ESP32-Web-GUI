@@ -1,0 +1,12 @@
+{
+  "deviceName": "esp32",
+  "inputs": ["esp32/di1","esp32/di2","esp32/di3","esp32/di4","esp32/di5","esp32/di6","esp32/di7","esp32/di8"],
+  "outputs": ["esp32/do1","esp32/do2","esp32/do3","esp32/do4","esp32/do5","esp32/do6","esp32/do7","esp32/do8"],
+  "rs485": {
+    "baud": 9600,
+    "parity": "None",
+    "stopBits": 1,
+    "dataBits": 8,
+    "addr": "1"
+  }
+}
