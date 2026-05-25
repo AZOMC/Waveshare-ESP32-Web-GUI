@@ -56,7 +56,12 @@ All connectivity and automation configuration lives on this single page, organis
 
 Connect the ESP32 to an MQTT broker to publish DI/DO state changes and RS485 register values, and receive remote DO control commands.
 
+<table>
+<tr>
+<td valign="top" width="60%">
+
 **Connection mode:**
+
 
 | Mode | Use when |
 |---|---|
@@ -64,6 +69,18 @@ Connect the ESP32 to an MQTT broker to publish DI/DO state changes and RS485 reg
 | **Local TLS** | Same as above but with TLS encryption (port 8883) |
 | **Cloud WS** | Connecting to a cloud broker over WebSocket (e.g. HiveMQ) |
 | **Cloud WSS** | Cloud broker over secure WebSocket — port 443, path `/mqtt` |
+
+</td>
+<td valign="top" width="40%" align="center">
+
+<img src="https://github.com/user-attachments/assets/b228a2bd-5838-476c-aaa5-f50edfd95191" alt="image" width="100%" />
+
+</td>
+</tr>
+</table>
+
+
+
 
 **DI/DO Topics:**
 
@@ -74,6 +91,7 @@ Each DI and DO channel has two fields:
 > Example: set DI1 topic to `factory/di1` and heartbeat to `5000` — the ESP32 will publish `"1"` or `"0"` to `factory/di1` every 5 seconds, and also immediately on any state change.
 
 Changes take effect immediately after clicking **Save** — no reboot required.
+<p align="center"><img src="https://github.com/user-attachments/assets/fd362b15-0472-4858-a44f-8065c705f2e6" alt="image" width="400" /></p>
 
 ---
 
@@ -85,6 +103,8 @@ Configure the RS485 serial port and define up to **16 Modbus registers** to poll
 
 - **Poll interval** — how often (in ms) the next register in the round-robin is polled. Minimum 50 ms.
 - **Publish interval** — how often (in ms) a register's value is published to its MQTT topic, independent of the poll rate.
+
+<p align="center"><img src="https://github.com/user-attachments/assets/d7f3a3e2-04d2-4a7d-b20e-077020390b65" alt="image" width="400" /></p>
 
 **Register table (per register):**
 
@@ -112,6 +132,8 @@ Click **Add Register**, fill in the fields, then **Save Registers**. Polling beg
 - **Manual snapshot** — write one CSV row immediately
 - **File browser** — list all files on the SD card with Download, Preview, and Delete actions
 
+<p align="center"><img src="https://github.com/user-attachments/assets/cdfe5afb-5d45-48a3-963b-988384c4f5c1" alt="image" width="400" /></p>
+
 Log files are named `log_YYYYMMDD_HHmm.csv` (e.g. `log_20240115_0900.csv`).
 
 Each row in the CSV contains:
@@ -134,6 +156,7 @@ Configure the Telegram bot for push alerts and remote commands. See [04 — Tele
 - Reject alert threshold (send an alert every N rejects; set to 0 to disable)
 - **Send Test Message** button to verify the bot is working
 
+<p align="center"><img src="https://github.com/user-attachments/assets/14acb418-4a95-4ec2-a04d-66e62f4a7687" alt="image" width="400" /></p>
 ---
 
 ## Next Step
