@@ -105,7 +105,6 @@ Change these by editing `data/users.json` before uploading. See [Configuration](
 
 ---
 
-## Credits
-
-Developed by **SHRDC** (Selangor Human Resource Development Centre) for the **Malaysian Smart Factory 4.0** Department.  
-All Rights Reserved.
+## Credits & Acknowledgments
+* **Developer:** Mohamad Anass Al Kabbani
+* **Project Context:** Developed during an internship at the **Selangor Human Resource Development Centre (SHRDC)** for the **Malaysian Smart Factory 4.0** department.
