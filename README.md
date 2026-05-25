@@ -110,6 +110,7 @@ Change these by editing `data/users.json` before uploading. See [Configuration](
 - Ethernet with PoE + Wi-Fi 2.4 GHz
 - MicroSD card slot (SD_MMC 1-bit)
 - RS485 half-duplex port
+<p align="center"><img src="https://github.com/user-attachments/assets/a3708949-8a5a-4634-a5ae-901d249105d2" alt="image" width="400" /></p>
 
 ---
 
