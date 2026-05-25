@@ -2,9 +2,10 @@
 
 A browser-based monitoring and control dashboard running entirely on a **Waveshare ESP32-S3-POE-ETH-8DI-8DO** board. No app, no cloud, no install — open the dashboard from any browser on your local network.
 
-![Board](https://img.shields.io/badge/Board-Waveshare%20ESP32--S3--POE--ETH--8DI--8DO-blue)
-![Platform](https://img.shields.io/badge/Platform-Arduino%20IDE%202.x-green)
-![Organization](https://img.shields.io/badge/Organization-SHRDC%20%2F%20MSF-orange)
+[![Board](https://img.shields.io/badge/Board-Waveshare%20ESP32--S3--POE--ETH--8DI--8DO-blue)](https://www.waveshare.com/wiki/ESP32-S3-POE-ETH-8DI-8DO)
+[![Platform](https://img.shields.io/badge/Platform-Arduino%20IDE%202.x-green)](https://www.arduino.cc/en/software/)
+[![Organization](https://img.shields.io/badge/Organization-SHRDC%20%2F%20MSF-orange)](https://shrdc.org.my)
+
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/8beee67c-5086-4fcf-945f-7296257cb16e" alt="image 1" width="300" />
