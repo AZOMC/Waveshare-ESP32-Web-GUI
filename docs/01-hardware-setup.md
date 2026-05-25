@@ -4,20 +4,20 @@
 
 | Item | Notes |
 |---|---|
-| **Waveshare ESP32-S3-POE-ETH-8DI-8DO** | Main board |
+| **Waveshare ESP32-S3-POE-ETH-8DI-8DO** | Main board (Any similar specs board will also work) |
 | **USB-C cable** | Must be a data cable — charge-only cables won't work for flashing |
-| **MicroSD card** | FAT32 formatted, Class 10 recommended |
-| **Ethernet cable** | Cat5e/Cat6; use a PoE switch or injector if powering via Ethernet |
-| **Power supply** | 5–48 V DC via terminal block, or PoE from the Ethernet port |
-| **Sensors / switches** | Dry-contact or NPN open-collector, connected to DI1–DI8 |
-| **Relays / indicators** | Connected to DO1–DO8 |
+| **Power supply** | 7–36 V DC via terminal block, or PoE from the Ethernet port |
+| **MicroSD card** *(optional)* | FAT32 formatted, Class 10 recommended |
+| **Ethernet cable** *(optional)* | Cat5e/Cat6; use a PoE switch or injector if powering via Ethernet |
+| **Sensors / switches** *(optional)* | Dry-contact or NPN open-collector, connected to DI1–DI8 |
+| **Relays / indicators** *(optional)* | Connected to DO1–DO8 |
 | **RS485 slave device** *(optional)* | Any Modbus RTU device — PLC, VFD, energy meter |
 
 ---
 
 ## Pin Reference
 
-### Digital Inputs (DI1–DI8)
+### Digital Inputs (DI1–DI8) *(Can be changed)*
 
 | Channel | GPIO | Default role |
 |---|---|---|
@@ -60,7 +60,7 @@ Uses SD_MMC in 1-bit mode on GPIO 45 / 47 / 48. The card must be **FAT32 formatt
 ## Power Options
 
 - **PoE** — plug into a PoE-capable switch or injector via Ethernet
-- **DC terminal** — connect a 5–48 V DC supply to the power terminal block on the board
+- **DC terminal** — connect a 7–36 V DC supply to the power terminal block on the board
 
 ---
 
