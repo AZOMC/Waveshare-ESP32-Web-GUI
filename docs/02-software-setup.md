@@ -50,13 +50,13 @@ The remaining libraries (`LittleFS`, `SD_MMC`, `ETH`, `WebServer`, `WiFiClientSe
 
 The web files (HTML, CSS, JSON) are stored in the ESP32's flash and uploaded separately from the firmware using a plugin.
 
-1. Download the latest `.jar` file from [github.com/lorol/arduino-esp32littlefs-plugin/releases](https://github.com/lorol/arduino-esp32littlefs-plugin/releases)
+1. Download the latest `.jar` file from [github.com/lorol/arduino-esp32littlefs-plugin/releases](https://github.com/lorol/arduino-esp32fs-plugin/releases)
 2. Find your Arduino sketchbook folder:
    - Windows: `Documents\Arduino`
    - macOS / Linux: `~/Arduino`
 3. Create this path and place the `.jar` file inside it:
    ```
-   tools/ESP32LittleFS/tool/ESP32LittleFS-x.x.x.jar
+   tools/ESP32FS/tool/ESP32FS.jar
    ```
 4. **Restart Arduino IDE completely**
 5. Verify: press `Ctrl+Shift+P`, search for `Upload LittleFS` — it should appear in the list
@@ -65,7 +65,7 @@ The web files (HTML, CSS, JSON) are stored in the ESP32's flash and uploaded sep
 
 ## Step 6 — Set Your Wi-Fi Credentials
 
-Open `ESP32_test.ino` and update these two lines near the top:
+Open `ESP32_GUI.ino` and update these two lines near the top:
 
 ```cpp
 const char* ssid     = "YOUR_SSID";
@@ -82,8 +82,6 @@ const char* password = "YOUR_PASSWORD";
 2. Confirm the correct board and COM port are selected under the **Tools** menu
 3. Click **Upload** (the arrow button) or press `Ctrl+U`
 4. Wait for *Done uploading* in the output panel
-
-> If you see *Failed to connect*, hold the **BOOT** button on the board while clicking Upload, then release it once uploading starts.
 
 ---
 
