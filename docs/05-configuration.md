@@ -66,7 +66,7 @@ Auto-generated when you save rules from the IoT Config page. Do not edit manuall
 
 ## Changing Wi-Fi Credentials
 
-Wi-Fi credentials are hardcoded in the firmware. Open `ESP32_test.ino` and update:
+Wi-Fi credentials are hardcoded in the firmware. Open `ESP32_GUI.ino` and update:
 
 ```cpp
 const char* ssid     = "YOUR_SSID";
@@ -90,7 +90,7 @@ By default:
 - DI2 goes active → forces RUNNING
 - DI3 goes active → forces STOPPED
 
-To change this, find `autoUpdateMachineState()` in `ESP32_test.ino`. Channel indices are 0-based (DI1 = 0, DI2 = 1, ..., DI8 = 7):
+To change this, find `autoUpdateMachineState()` in `ESP32_GUI.ino`. Channel indices are 0-based (DI1 = 0, DI2 = 1, ..., DI8 = 7):
 
 ```cpp
 void autoUpdateMachineState(int ch, int state) {
@@ -105,7 +105,7 @@ Re-flash the firmware after changes.
 
 ## Changing the Cycle Time Channels
 
-Cycle time is currently measured from the **DI4** rising edge to the **DI6** rising edge. To use different channels, find this block in `ESP32_test.ino` (inside the DI scan in `loop()`):
+Cycle time is currently measured from the **DI4** rising edge to the **DI6** rising edge. To use different channels, find this block in `ESP32_GUI.ino` (inside the DI scan in `loop()`):
 
 ```cpp
 if (i == 3) { cycleStartMs = now; cycleActive = true; }          // DI4 — change index 3
@@ -133,19 +133,12 @@ Re-flash firmware after changes.
 
 ## Changing the NTP Timezone
 
-The board defaults to UTC+8 (Malaysia). Find this line in `ESP32_test.ino`:
+The board defaults to UTC+8 (Malaysia). Find this line in `ESP32_GUI.ino`:
 
 ```cpp
 configTime(8*3600, 0, "pool.ntp.org", "time.cloudflare.com");
 //          ↑ change this to your UTC offset in seconds
 ```
-
-| Timezone | Value |
-|---|---|
-| UTC+8 Malaysia | `8*3600` |
-| UTC+5:30 India | `5*3600 + 30*60` |
-| UTC+0 | `0` |
-| UTC−5 Eastern US | `-5*3600` |
 
 Re-flash firmware after changes.
 
