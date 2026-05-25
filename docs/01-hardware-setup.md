@@ -17,9 +17,9 @@
 
 ## Pin Reference
 
-### Digital Inputs (DI1–DI8) *(Can be changed)*
+### Digital Inputs (DI1–DI8) 
 
-| Channel | GPIO | Default role |
+| Channel | GPIO | Default role *(Can be changed)*|
 |---|---|---|
 | DI1 | 4 | Emergency (toggles machine state RUNNING/STOPPED) |
 | DI2 | 5 | Start Sequence (forces RUNNING) |
