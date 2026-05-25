@@ -1,4 +1,4 @@
-# ESP32 Industrial Dashboard
+# Waveshare ESP32 Web GUI
 
 A browser-based monitoring and control dashboard running entirely on a **Waveshare ESP32-S3-POE-ETH-8DI-8DO** board. No app, no cloud, no install — open the dashboard from any browser on your local network.
 
