@@ -6,6 +6,7 @@ A browser-based monitoring and control dashboard running entirely on a **Wavesha
 ![Platform](https://img.shields.io/badge/Platform-Arduino%20IDE%202.x-green)
 ![License](https://img.shields.io/badge/License-SHRDC%20%2F%20MSF-orange)
 
+
 ---
 
 ## What It Does
@@ -39,7 +40,7 @@ A browser-based monitoring and control dashboard running entirely on a **Wavesha
 | URL | Page |
 |---|---|
 | `/` | Dashboard — live DI/DO states, machine metrics, ESP32 health |
-| `/iot` | IoT Config — MQTT broker, RS485/Modbus registers, DO logic rules |
+| `/iot` | IoT Config — MQTT broker, RS485/Modbus registers |
 | `/sdcard` | SD Card — log settings, file browser |
 | `/telegram` | Telegram Bot — credentials, alerts, command reference |
 
@@ -64,8 +65,8 @@ A browser-based monitoring and control dashboard running entirely on a **Wavesha
 ESP32_GUI/
 ├── ESP32_GUI.ino          ← Arduino firmware (flash this first)
 └── data/                   ← Web files (upload separately via LittleFS tool)
-    ├── index.html          ← Dashboard
-    ├── iot.html            ← IoT Config (MQTT, RS485, DO Logic Rules)
+    ├── index.html          ← Dashboard (Machine Metrics, live DI/DO, DO Logic rules)
+    ├── iot.html            ← IoT Config (MQTT & RS485)
     ├── sdcard.html         ← SD Card manager
     ├── telegram.html       ← Telegram bot configuration
     ├── login.html          ← Login page
