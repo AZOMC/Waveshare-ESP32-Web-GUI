@@ -26,7 +26,7 @@
 ## LittleFS Upload
 
 **Upload LittleFS option not appearing in Arduino IDE**
-- The `.jar` plugin must be placed in `tools/ESP32LittleFS/tool/` inside your Arduino sketchbook folder
+- The `.jar` plugin must be placed in `tools/ESP32FS/tool/` inside your Arduino sketchbook folder
 - Restart Arduino IDE completely after placing the file
 - The `data/` folder must be directly inside the sketch folder (same level as the `.ino` file)
 
@@ -68,11 +68,6 @@
 - Open the browser developer console (F12 → Network tab) and look for failed fetch requests
 - A `401` error means the session cookie expired — log out and log back in
 - A `500` error indicates a firmware issue — check Serial Monitor for details
-
-**DI/DO states frozen**
-- The ESP32 web server may be temporarily stalled by a slow RS485 slave or a Telegram HTTPS call
-- Check if the RS485 device is responding — a non-responsive slave causes Modbus timeouts
-- Reduce the number of enabled RS485 registers or increase the poll interval on the IoT Config page
 
 **Metrics reset to zero after reboot**
 - Metrics are saved to `metrics.json` every 5 minutes — up to 5 minutes of data can be lost after a power cut. This is expected behaviour.
