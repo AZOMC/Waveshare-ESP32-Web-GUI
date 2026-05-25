@@ -15,7 +15,7 @@ The main overview page. Shows everything at a glance:
 - **ESP32 health** — chip temperature, free RAM, Wi-Fi RSSI (or "Ethernet"), CPU speed, uptime
 - **Digital Inputs (DI1–DI8)** — live ON/OFF badges, updated every 500 ms
 - **Digital Outputs (DO1–DO8)** — live state badges with **Toggle** buttons
-- **DO Logic Rules** — 
+- **DO Logic Rules** — Automatically drive outputs based on input state conditions (AND/OR logic)
 
 Clicking a **Toggle** button immediately flips that output. The badge updates on the next poll (within 500 ms).
 
