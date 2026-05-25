@@ -29,7 +29,7 @@ A browser-based monitoring and control dashboard running entirely on a **Wavesha
 
 1. [Set up hardware](docs/01-hardware-setup.md) — connect power, Ethernet, and sensors
 2. [Set up software](docs/02-software-setup.md) — install Arduino IDE, libraries, and the LittleFS plugin
-3. Flash firmware + upload web files — full steps in the software setup guide
+3. Flash firmware + upload web files (src folder) — full steps in the software setup guide
 4. Open `http://<ESP32-IP>` in any browser
 5. Log in with **admin** / **admin123**
 
