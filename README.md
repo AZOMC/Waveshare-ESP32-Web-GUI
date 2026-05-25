@@ -6,6 +6,14 @@ A browser-based monitoring and control dashboard running entirely on a **Wavesha
 ![Platform](https://img.shields.io/badge/Platform-Arduino%20IDE%202.x-green)
 ![Organization](https://img.shields.io/badge/Organization-SHRDC%20%2F%20MSF-orange)
 
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/8beee67c-5086-4fcf-945f-7296257cb16e" alt="image 1" width="300" />
+  <img src="https://github.com/user-attachments/assets/e3f08a49-a7bf-4a93-a800-21e9a4719acb" alt="image 2" width="300" />
+</p>
+
+
+
+
 ---
 
 ## What It Does
@@ -31,6 +39,7 @@ A browser-based monitoring and control dashboard running entirely on a **Wavesha
 3. Flash firmware + upload web files (src folder) — full steps in the software setup guide
 4. Open `http://<ESP32-IP>` in any browser
 5. Log in with **admin** / **admin123**
+<p align="center"><img src="https://github.com/user-attachments/assets/9d880dd8-1759-4a46-a9ef-8d20b91fe8cf" alt="image" width="400" /></p>
 
 ---
 
