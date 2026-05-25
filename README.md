@@ -4,8 +4,8 @@ A browser-based monitoring and control dashboard running entirely on a **Wavesha
 
 <p align="center">
   <a href="https://www.waveshare.com/wiki/ESP32-S3-POE-ETH-8DI-8DO"><img src="https://img.shields.io/badge/Board-Waveshare%20ESP32--S3--POE--ETH--8DI--8DO-blue" alt="Board" /></a>
-  <a href="https://www.arduino.cc/en/software/"><img src="https://img.shields.io/badge/Platform-Arduino%20IDE%202.x-green" alt="Platform" /></a>
-  <a href="https://shrdc.org.my"><img src="https://img.shields.io/badge/Organization-SHRDC%20%2F%20MSF-orange" alt="Organization" /></a>
+  <a href="https://www.arduino.cc/en/software/"><img src="https://img.shields.io/badge/Platform-Arduino%20IDE%202.x-yellow" alt="Platform" /></a>
+  <a href="https://shrdc.org.my"><img src="https://img.shields.io/badge/Organization-SHRDC%20%2F%20MSF-red" alt="Organization" /></a>
 </p>
 
 
