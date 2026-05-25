@@ -4,8 +4,7 @@ A browser-based monitoring and control dashboard running entirely on a **Wavesha
 
 ![Board](https://img.shields.io/badge/Board-Waveshare%20ESP32--S3--POE--ETH--8DI--8DO-blue)
 ![Platform](https://img.shields.io/badge/Platform-Arduino%20IDE%202.x-green)
-![License](https://img.shields.io/badge/License-SHRDC%20%2F%20MSF-orange)
-
+![Organization](https://img.shields.io/badge/Organization-SHRDC%20%2F%20MSF-orange)
 
 ---
 
