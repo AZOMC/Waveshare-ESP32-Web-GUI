@@ -15,16 +15,40 @@ The main overview page. Shows everything at a glance:
 - **ESP32 health** — chip temperature, free RAM, Wi-Fi RSSI (or "Ethernet"), CPU speed, uptime
 - **Digital Inputs (DI1–DI8)** — live ON/OFF badges, updated every 500 ms
 - **Digital Outputs (DO1–DO8)** — live state badges with **Toggle** buttons
+- **DO Logic Rules** — 
 
 Clicking a **Toggle** button immediately flips that output. The badge updates on the next poll (within 500 ms).
 
 **Efficiency** defaults to `Runtime ÷ (Runtime + Downtime) × 100%`. You can override this with a custom formula — save one in the custom efficiency section and it will be used here automatically.
 
+### DO Logic Rules 
+
+Automatically control outputs based on input states — no PLC required. Each rule defines conditions based on DI states and drives a DO output when those conditions are met.
+
+**How it works:**
+- Each rule targets one **Digital Output** (DO1–DO8)
+- The rule has one or more **conditions** on DI states (ON or OFF)
+- Conditions are chained with **AND** or **OR** logic
+- When the overall condition evaluates to true, the output turns ON; when false, it turns OFF
+- Rules are re-evaluated automatically every time any DI state changes
+
+**Example rule:**
+```
+IF DI2 = ON  AND  DI3 = OFF  →  DO1 = ON
+```
+This turns on DO1 (e.g. a green indicator light) whenever the Start button (DI2) is pressed and the Reset button (DI3) is not active.
+
+Up to **16 rules** can be defined, each with up to **8 conditions**.
+
+> **Note:** Rules run automatically and will override manual toggles from the dashboard whenever a DI state changes. To stop a rule from controlling an output, disable it with the toggle or delete it.
+
+Click **Add Rule**, configure the output, add conditions, then **Save Rules**. Rules take effect immediately.
+
 ---
 
 ## `/iot` — IoT Config
 
-All connectivity and automation configuration lives on this single page, organised into three sections: **MQTT**, **RS485 / Modbus**, and **DO Logic Rules**.
+All connectivity and automation configuration lives on this single page, organised into three sections: **MQTT**, and **RS485 / Modbus**.
 
 ---
 
@@ -78,31 +102,6 @@ Configure the RS485 serial port and define up to **16 Modbus registers** to poll
 Live values and OK/Error status are shown in the table, updated as polls come in.
 
 Click **Add Register**, fill in the fields, then **Save Registers**. Polling begins immediately — no reboot needed. A green/red indicator shows whether the device is responding.
-
----
-
-### DO Logic Rules
-
-Automatically control outputs based on input states — no PLC required. Each rule defines conditions based on DI states and drives a DO output when those conditions are met.
-
-**How it works:**
-- Each rule targets one **Digital Output** (DO1–DO8)
-- The rule has one or more **conditions** on DI states (ON or OFF)
-- Conditions are chained with **AND** or **OR** logic
-- When the overall condition evaluates to true, the output turns ON; when false, it turns OFF
-- Rules are re-evaluated automatically every time any DI state changes
-
-**Example rule:**
-```
-IF DI2 = ON  AND  DI3 = OFF  →  DO1 = ON
-```
-This turns on DO1 (e.g. a green indicator light) whenever the Start button (DI2) is pressed and the Reset button (DI3) is not active.
-
-Up to **16 rules** can be defined, each with up to **8 conditions**.
-
-> **Note:** Rules run automatically and will override manual toggles from the dashboard whenever a DI state changes. To stop a rule from controlling an output, disable it with the toggle or delete it.
-
-Click **Add Rule**, configure the output, add conditions, then **Save Rules**. Rules take effect immediately.
 
 ---
 
